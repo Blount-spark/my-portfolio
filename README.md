@@ -87,7 +87,7 @@ my-portfolio/
 
 - 构建流水线：`npm ci → npm test → npm run build → 上传 dist/ → 发布 Pages`，测试不过不会发布，线上传不了坏版本
 - 仓库必须是**公开（public）**：GitHub 免费版的 Pages 只服务公开仓库，**把仓库转成私有，网站会直接停掉**
-- 首次开通 Pages（Settings → Pages → Build source 选 GitHub Actions）只需做一次，已完成；想手动触发一次发布，去仓库 Actions 页 → Deploy site → Run workflow
+- 开通 Pages（Settings → Pages → Build source 选 GitHub Actions）是一次性的，**首次部署时由维护者完成**；想手动触发一次发布，去仓库 Actions 页 → Deploy site → Run workflow
 
 ## 常见问题
 
@@ -95,7 +95,7 @@ my-portfolio/
 
 **换电脑 / 换浏览器，后台又要我输令牌？** 正常。令牌只存在原浏览器的本地存储里，不上传任何地方，新环境重贴一次即可。
 
-**图片上传被拒「超过 5MB」？** 后台限单张 5MB。先用 [squoosh.app](https://squoosh.app) 压到 500KB 以内再传——仓库更轻、访客加载也快。
+**图片上传被拒「图片超过 5MB」？** 后台限单张 5MB。先用 [squoosh.app](https://squoosh.app) 压到 500KB 以内再传——仓库更轻、访客加载也快。
 
 **本地改了数据页面没变？** 确认跑的是 `npm run dev`（开发）而不是 `npm run preview`（预览的是上次构建的旧产物）。
 
