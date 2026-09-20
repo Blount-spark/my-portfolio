@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import site from './data/site.json'
 import PROFILE from './data/profile.js'
 import { tiltFromId, tapeFromId } from './lib/ids.js'
+import { decodeSlug } from './lib/route.js'
 import Markdown from './components/Markdown.jsx'
 
 // ---------- 数据源：site.json（后台提交唯一写入的文件，见 spec §3） ----------
@@ -259,7 +260,7 @@ function About() {
 export default function App() {
   const [active, setActive] = useState('all')
   const hash = useHashRoute()
-  const route = hash.startsWith('#/work/') ? decodeURIComponent(hash.slice('#/work/'.length)) : null
+  const route = hash.startsWith('#/work/') ? decodeSlug(hash.slice('#/work/'.length)) : null
   const detailWork = route ? WORKS.find((w) => w.id === route && w.bodyMd) : null
 
   const shown = useMemo(
