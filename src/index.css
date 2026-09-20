@@ -644,6 +644,12 @@ body {
   gap: 16px;
   transform: rotate(0);
 }
+/* 「提交中就锁整张表单」那张 fieldset（WorkEditor）：外观全走 .admin-card / .admin-form，
+   这里只补 fieldset 自己那点默认值 —— min-inline-size:auto 会按内容撑破 max-width（窄屏溢出）；
+   浏览器自带的 groove 边框与 padding 已由卡片类覆盖，不用再写一遍。 */
+.admin-fields { min-inline-size: 0; }
+/* 锁住要看得出来：文字输入框禁用时没有内建观感，沿用只读格子那层纸色 */
+.admin-fields:disabled .admin-input { background: #F7F1E6; cursor: not-allowed; }
 .admin-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .admin-cell > .admin-field { margin-bottom: 0; }
 .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }

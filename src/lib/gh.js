@@ -42,6 +42,11 @@ export function makeGh({ owner, repo, token, fetchImpl = fetch }) {
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
           Authorization: `Bearer ${token}`,
+          // 写请求显式声明 JSON：body 是字符串时浏览器按 text/plain 发，GitHub 可能回 415。
+          // 只给非 GET 加：GET 带上它会从 simple request 变成先跑一次 CORS 预检，白涨一个往返。
+          ...(opts.method && opts.method.toUpperCase() !== 'GET'
+            ? { 'Content-Type': 'application/json' }
+            : {}),
           ...(opts.headers || {}),
         },
       })
@@ -72,9 +77,15 @@ export function makeGh({ owner, repo, token, fetchImpl = fetch }) {
       return { site, sha: f.sha }
     },
     async putSite(site, sha) {
+      // 与 scripts/migrate-works.mjs 落盘格式逐字一致（2 空格缩进 + 末尾换行）：
+      // 「仓库即数据库」卖的就是 Git 历史可读，压缩成一行的 diff 没法看也没法手工回滚。
       const r = await req(`/contents/${SITE_PATH}`, {
         method: 'PUT',
-        body: JSON.stringify({ message: 'content: 更新灵感实践', content: strToB64(JSON.stringify(site)), sha }),
+        body: JSON.stringify({
+          message: 'content: 更新灵感实践',
+          content: strToB64(JSON.stringify(site, null, 2) + '\n'),
+          sha,
+        }),
       })
       return { sha: contentSha(r) }
     },

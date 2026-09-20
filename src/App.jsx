@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import site from './data/site.json'
 import PROFILE from './data/profile.js'
 import { tiltFromId, tapeFromId } from './lib/ids.js'
+import { assetSrc } from './lib/asset.js'
 import { decodeSlug } from './lib/route.js'
 import Markdown from './components/Markdown.jsx'
 import AdminApp from './admin/AdminApp.jsx'
@@ -156,7 +157,7 @@ function WorkCard({ work, index }) {
         style={{ background: `linear-gradient(135deg, ${work.gradient[0]}, ${work.gradient[1]})` }}
       >
         {work.img ? (
-          <img src={work.img} alt={work.title} loading="lazy" />
+          <img src={assetSrc(work.img)} alt={work.title} loading="lazy" />
         ) : (
           <span className="cover-emoji">{work.emoji}</span>
         )}
@@ -208,7 +209,7 @@ function WorkDetail({ work, onBack }) {
           className="detail-cover"
           style={{ background: `linear-gradient(135deg, ${work.gradient[0]}, ${work.gradient[1]})` }}
         >
-          {work.img ? <img src={work.img} alt={work.title} /> : <span className="cover-emoji big">{work.emoji}</span>}
+          {work.img ? <img src={assetSrc(work.img)} alt={work.title} /> : <span className="cover-emoji big">{work.emoji}</span>}
         </div>
         <div className="detail-head">
           <span className="detail-cat" style={{ background: cat.color }}>{cat.emoji} {cat.label}</span>

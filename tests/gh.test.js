@@ -26,6 +26,8 @@ test('getSite 带正确头并解码内容', async () => {
   assert.ok(seen.url.includes('/repos/o/r/contents/src/data/site.json'))
   assert.equal(seen.opts.headers.Authorization, 'Bearer gpat')
   assert.equal(seen.opts.headers['X-GitHub-Api-Version'], '2022-11-28')
+  // GET 不带 Content-Type：带了就不是 simple request，每次读仓库都要先跑一遍 CORS 预检
+  assert.equal(seen.opts.headers['Content-Type'], undefined)
 })
 
 test('401→bad_token 403→no_access 409→conflict', async () => {
@@ -35,17 +37,25 @@ test('401→bad_token 403→no_access 409→conflict', async () => {
   }
 })
 
-test('putSite 发 PUT 且 content/message/sha 齐全', async () => {
+test('putSite 发 PUT：content 为 2 空格缩进 + 末尾换行的 JSON，且显式声明 Content-Type', async () => {
+  const site = { works: [{ id: 'w-1', title: '中文🎨' }] }
   let seen
   const gh = makeGh({ ...cfg, fetchImpl: route((url, opts) => {
-    if (opts.method === 'PUT') seen = JSON.parse(opts.body)
+    if (opts.method === 'PUT') seen = { body: JSON.parse(opts.body), headers: opts.headers }
     return { status: 201, json: { content: { sha: 'S2' } } }
   }) })
-  const out = await gh.putSite({ works: [] }, 'S1')
+  const out = await gh.putSite(site, 'S1')
   assert.equal(out.sha, 'S2')
-  assert.equal(seen.sha, 'S1')
-  assert.equal(b64ToStr(seen.content.replace(/\n/g, '')), '{"works":[]}')
-  assert.ok(seen.message.length > 0)
+  assert.equal(seen.body.sha, 'S1')
+  assert.ok(seen.body.message.length > 0)
+  // 存进仓库的必须是人能读、能 diff 的这一份（与 scripts/migrate-works.mjs 落盘格式逐字相同）：
+  // 压成一行的话，「Git 历史随时可回滚」这个卖点就只剩机器能看了
+  const content = b64ToStr(seen.body.content)
+  assert.equal(content, '{\n  "works": [\n    {\n      "id": "w-1",\n      "title": "中文🎨"\n    }\n  ]\n}\n')
+  assert.equal(content, JSON.stringify(site, null, 2) + '\n')
+  assert.equal(content, JSON.stringify(JSON.parse(content), null, 2) + '\n') // 幂等：读回来再写出去不抖动
+  // 字符串 body 默认按 text/plain 发，GitHub 可能 415 —— 写请求要显式带 JSON 头
+  assert.equal(seen.headers['Content-Type'], 'application/json')
 })
 
 // ---- 补充覆盖：brief 接口块声明但上方未断言的成员（putImage / latestCommitDate /
@@ -77,13 +87,14 @@ test('checkAccess 成功返回 true，请求 site.json 元数据', async () => {
 test('putImage 发 PUT 到 images/works 且 body 只有 message/content', async () => {
   let seen
   const gh = makeGh({ ...cfg, fetchImpl: route((url, opts) => {
-    seen = { url, method: opts.method, body: JSON.parse(opts.body) }
+    seen = { url, method: opts.method, body: JSON.parse(opts.body), headers: opts.headers }
     return { status: 201, json: { content: { sha: 'I2' } } }
   }) })
   const bytes = new TextEncoder().encode('PNGDATA')
   const out = await gh.putImage('w-x-01-1.png', bytes, 'content: 新增图片 w-x-01-1.png')
   assert.equal(out.sha, 'I2')
   assert.equal(seen.method, 'PUT')
+  assert.equal(seen.headers['Content-Type'], 'application/json')
   assert.ok(seen.url.endsWith('/repos/o/r/contents/public/images/works/w-x-01-1.png'))
   assert.deepEqual(seen.body, { message: 'content: 新增图片 w-x-01-1.png', content: bytesToB64(bytes) })
 })

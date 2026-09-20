@@ -53,6 +53,7 @@ GitHub Pages（前台墙 + 详情页 + 后台页本体）
 }
 ```
 
+- 存储路径保持根相对 `/images/works/...`（规范形式），**渲染时**经 `src/lib/asset.js` 解析为相对 base 的路径（Pages 项目子目录托管必需）
 - `id` 从数字改为 slug：`tiltOf` 倾斜角改为对 id 字符串做稳定哈希，视觉效果不变
 - `detail.story/gallery/captions` 结构废除 → 统一进 `bodyMd`（旧 gallery 迁移时转为图片行 + 斜体说明）
 - `PROFILE`（个人信息）仍留在代码里，不纳入后台（改得少，YAGNI；后台结构预留扩展位置）

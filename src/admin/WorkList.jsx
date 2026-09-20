@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { assetSrc } from '../lib/asset.js'
 import { errorText, errorTextFrom } from './TokenGate.jsx'
 
 // site.json 里的分类是有限集合（没有前台那个「✨ 全部」伪条目）。
@@ -113,7 +114,7 @@ export default function WorkList({ gh, site, error, auth, onNew, onEdit, onReloa
             return (
               <li className="admin-row" key={w.id}>
                 <span className="admin-thumb" style={thumbStyle(w.gradient)}>
-                  {w.img ? <img src={w.img} alt="" loading="lazy" /> : <span className="admin-thumb-emoji">{w.emoji || '🗒️'}</span>}
+                  {w.img ? <img src={assetSrc(w.img)} alt="" loading="lazy" /> : <span className="admin-thumb-emoji">{w.emoji || '🗒️'}</span>}
                 </span>
                 <span className="admin-row-main">
                   <span className="admin-row-title">{w.title || '（还没写标题）'}</span>

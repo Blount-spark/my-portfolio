@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { validateWork, validateImage, IMAGE_MAX } from '../lib/validate.js'
 import { newWorkId } from '../lib/ids.js'
+import { assetSrc } from '../lib/asset.js'
 import { extFromType } from '../lib/gh.js'
 import Markdown from '../components/Markdown.jsx'
 import { errorText } from './TokenGate.jsx'
@@ -93,8 +94,12 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
   const [notice, setNotice] = useState({ text: '', kind: '' })
   const [pending, setPending] = useState(false)   // 正在写 site.json
   const [uploading, setUploading] = useState('')  // 'body' | 'cover' | ''
+  const [leaveOk, setLeaveOk] = useState(false)   // 已保存成功 / 已确认放弃：不用再拦着离开
 
   const busy = pending || !!uploading
+  const isNew = !work
+  // 「改过没有」只有一处口径：cancel 的二次确认和 beforeunload 都用它，别各算各的
+  const dirty = JSON.stringify(form) !== snapshot
   // 分类下拉与校验都看基线里这一份（自取到的 / 父级刷回来的）
   const categories = useMemo(
     () => (base.site && Array.isArray(base.site.categories) ? base.site.categories : []),
@@ -136,6 +141,19 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
   useEffect(() => { formRef.current = form })
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [])
+
+  // 没保存就刷新/关标签：拦一下 —— 改的字全在内存里，仓库那边一个字都没有。
+  // 只拦「改既有那一条」：新建时分类要等 site.json 回来才补得上默认值（上面那个 effect），
+  // 快照里的分类还是空的，表单就已经「脏」了 —— 用户一个字没打也会被拦，假脏比漏拦更烦。
+  useEffect(() => {
+    if (isNew || !dirty || leaveOk) return
+    const onBeforeUnload = (e) => {
+      e.preventDefault() // 标准写法
+      e.returnValue = '' // Safari/旧 Chromium 只认这个才弹确认
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [isNew, dirty, leaveOk])
 
   // 文本操作后要还原选区（受控 textarea 重渲染会把 selection 冲掉），所以排在每次渲染之后
   useEffect(() => {
@@ -323,6 +341,7 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
       const newSite = { ...root, works }
       const r = await gh.putSite(newSite, cur.sha)
       setBase({ site: newSite, sha: r.sha })
+      setLeaveOk(true) // 已经落库了，回列表这一路不该再被 beforeunload 拦
       window.alert('已提交，站点约 1~2 分钟后自动更新')
       committed = true
     } catch (err) {
@@ -350,12 +369,13 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
     const msg = seq.current > 0
       ? '还没保存的修改要丢掉吗？\n（已经传上去的图片留在仓库里，不会自动删，孤儿图片无害；正文与表单里没提交的改动会丢。）'
       : '还没保存的修改要丢掉吗？\n（丢掉就回列表，仓库里的内容不会有任何变化。）'
-    if (JSON.stringify(form) !== snapshot && !window.confirm(msg)) return
+    if (dirty && !window.confirm(msg)) return
+    setLeaveOk(true) // 这里已经问过一次了，别再让 beforeunload 接着弹第二遍
     onCancel()
   }
 
   const cover = () => {
-    if (form.img) return <img src={form.img} alt="封面预览" />
+    if (form.img) return <img src={assetSrc(form.img)} alt="封面预览" />
     return <span className="admin-thumb-emoji">{form.emoji || '🗒️'}</span>
   }
 
@@ -384,7 +404,11 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
           : <p className="admin-callout">{notice.text}</p>
       )}
 
-      <div className="admin-card wide admin-form">
+      {/* 整张表单就是这一个 fieldset：busy（保存或上传中）时浏览器连坐禁用里面每个控件。
+          save() 拿的是点下按钮那一刻的 form 快照，之后敲进来的字会被静默丢掉 ——
+          原先只锁了正文 textarea，标题/日期那几个输入是同一个坑的漏网之鱼。
+          外观仍由 .admin-card / .admin-form 定，.admin-fields 只抹 fieldset 自带的 min-inline-size。 */}
+      <fieldset className="admin-card wide admin-form admin-fields" disabled={busy}>
         <div className="admin-cell">
           <label className="admin-field">
             <span>标题 *</span>
@@ -533,7 +557,7 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
                   <button type="button" className="admin-btn sm tool" onClick={() => prefixLines('> ')} disabled={busy}>❝ 引用</button>
                   <button type="button" className="admin-btn sm tool" onClick={() => wrap('```\n', '\n```', '代码', true)} disabled={busy}>{'</>'} 代码块</button>
                 </div>
-                {/* busy 时锁输入：save() 已经拿 form 做了快照，这零点几秒再打的字会被静默丢掉 */}
+                {/* busy 时锁输入：外层 fieldset 已经把它禁了，readOnly 是同一件事的第二道闸（禁用态仍可选中复制） */}
                 <textarea ref={bodyRef} className="admin-input admin-textarea" value={form.bodyMd}
                   readOnly={busy}
                   spellCheck={false} placeholder={'## 怎么做出来的\n\n想写什么写什么，图片点上面的「插入图片」。'}
@@ -559,7 +583,7 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
           </button>
           <span className="admin-hint">提交前会先把没填对的格子标红</span>
         </div>
-      </div>
+      </fieldset>
 
       <p className="admin-foot-tip">
         一次保存最多产生两个 commit：先传新图片，再更新 site.json；Actions 构建约 1~2 分钟后前台生效。
