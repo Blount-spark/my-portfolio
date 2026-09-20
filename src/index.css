@@ -193,8 +193,9 @@ body {
 }
 
 .card:hover {
-  transform: rotate(0deg) translateY(-6px) scale(1.015);
-  box-shadow: 0 14px 30px rgba(45, 49, 66, 0.20);
+  /* 浮动走独立的 translate 属性：不碰 rotate（旋转动画+非整数DPR会重采样文字致糊），纯平移纹理不重栅格化全程清晰 */
+  translate: 0 -10px;
+  box-shadow: 0 18px 36px rgba(45, 49, 66, 0.24);
   z-index: 2;
 }
 
@@ -204,7 +205,8 @@ body {
   opacity: 1;
   transform: rotate(var(--tilt, 0deg)) translateY(0);
   transition: opacity 0.55s ease calc(var(--i, 0) * 70ms),
-              transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--i, 0) * 70ms);
+              transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--i, 0) * 70ms),
+              translate 0.18s ease-out, box-shadow 0.25s ease-out;
 }
 /* About 卡片没有 --tilt，单独兜底 */
 .about.reveal { transform: translateY(26px); }
