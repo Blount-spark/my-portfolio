@@ -1,0 +1,2 @@
+把作品图片放到这个文件夹，然后在 works.js 的 img / gallery 字段里写路径，
+例如：/images/my-photo.png
