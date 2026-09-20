@@ -463,6 +463,186 @@ body {
   border-top: 2px dashed rgba(45, 49, 66, 0.2);
 }
 
+/* 页脚里那个不起眼的后台入口 */
+.admin-link {
+  display: inline-block;
+  margin-left: 10px;
+  font-size: 12px;
+  color: #b3b7c4;
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(179, 183, 196, 0.7);
+}
+.admin-link:hover { color: #6C5CE7; border-bottom-color: #6C5CE7; }
+
+/* ============ 后台（#/admin）：同一套拼贴手账语言，只是更密更素 ============ */
+/* 门禁卡按 brief 规定的纸片感；position:relative 是给 .tape 定位用的 */
+.admin-card {
+  position: relative;
+  background: #fffdf7;
+  border: 2px dashed #b98;
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 480px;
+  margin: 40px auto;
+  transform: rotate(-.5deg);
+}
+.admin-card.wide { max-width: 860px; }
+
+.admin-card-title { font-size: 20px; font-weight: 900; margin-bottom: 6px; }
+.admin-card-sub { font-size: 13.5px; color: #6b6f80; margin-bottom: 18px; }
+
+.admin-field { display: block; margin-bottom: 14px; }
+.admin-field > span {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #55596b;
+  margin-bottom: 5px;
+}
+.admin-input {
+  width: 100%;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid rgba(45, 49, 66, 0.55);
+  border-radius: 10px;
+  padding: 8px 11px;
+}
+.admin-input:focus {
+  outline: none;
+  border-color: #6C5CE7;
+  box-shadow: 2px 2px 0 rgba(108, 92, 231, 0.28);
+}
+
+/* 硬阴影贴纸按钮，和 .pill / .about-link 同一手感 */
+.admin-btn {
+  display: inline-block;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 6px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 rgba(45, 49, 66, 0.85);
+  transition: transform 0.15s;
+}
+.admin-btn:hover { transform: translate(-1px, -2px); box-shadow: 4px 4px 0 rgba(45, 49, 66, 0.85); }
+.admin-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 rgba(45, 49, 66, 0.85); }
+.admin-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: 2px 2px 0 rgba(45, 49, 66, 0.4); }
+.admin-btn.primary { background: #FFE9A8; }
+.admin-btn.ghost { box-shadow: none; border-style: dashed; color: #7a7f92; }
+.admin-btn.danger { color: #D63031; border-color: #D63031; box-shadow: 2px 2px 0 rgba(214, 48, 49, 0.5); }
+
+.admin-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* 列表顶部 */
+.admin { padding-top: 34px; }
+.admin-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: 2px dashed rgba(45, 49, 66, 0.25);
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+}
+.admin-top-text { flex: 1 1 auto; min-width: 0; }
+.admin-title { font-size: 24px; font-weight: 900; transform: rotate(-.6deg); }
+.admin-sub { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12.5px; color: #7a7f92; margin-top: 4px; }
+.admin-repo {
+  font-family: ui-monospace, monospace;
+  background: rgba(108, 92, 231, 0.10);
+  color: #4a3fa8;
+  border-radius: 6px;
+  padding: 1px 8px;
+}
+
+/* 作品行 */
+.admin-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fffdf7;
+  border: 2px solid rgba(45, 49, 66, 0.35);
+  border-radius: 12px;
+  padding: 10px 14px;
+  transform: rotate(-.25deg);
+}
+.admin-row:nth-child(even) { transform: rotate(.3deg); }
+.admin-row:hover { border-color: var(--ink); box-shadow: var(--shadow); }
+.admin-thumb {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ink);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.admin-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.admin-thumb-emoji { font-size: 22px; }
+.admin-row-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.admin-row-title { font-size: 15px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-row-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 12px; color: #7a7f92; }
+.admin-row-date { font-family: ui-monospace, monospace; font-size: 11.5px; white-space: nowrap; }
+.admin-row-ops { display: flex; flex-wrap: wrap; gap: 8px; }
+/* 复用前台的 .tag 观感，但不要它那一行的下边距（本条在文件里更靠后，直接覆盖） */
+.admin-row-tags { margin-bottom: 0; }
+
+.admin-chip {
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  padding: 1px 9px;
+}
+/* 分类在 site.json 里被删掉 / 手写错：显示原始 id，绝不冒充「✨ 全部」 */
+.admin-chip.unknown { color: #8b4a00; background: #FFE9A8; border-style: dashed; }
+
+/* 反馈条 */
+.admin-notice {
+  background: #E8FBF5;
+  border: 2px dashed #2EC4B6;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  margin-bottom: 14px;
+}
+.admin-error { color: #D63031; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.admin-error-card { border-color: #D63031; }
+.admin-warn {
+  background: #FFF3D6;
+  border: 1.5px dashed #F4A62A;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  margin-bottom: 14px;
+}
+.admin-tip { font-size: 12px; color: #7a7f92; margin-top: 12px; line-height: 1.7; }
+.admin-tip code { font-family: ui-monospace, monospace; background: rgba(45, 49, 66, 0.07); border-radius: 4px; padding: 0 4px; }
+.admin-loading { font-size: 14px; color: #6b6f80; }
+.admin-empty-title { font-size: 16px; font-weight: 900; }
+.admin-foot-tip { font-size: 12px; color: #8b8fa0; text-align: center; margin: 18px 0 30px; }
+.admin-back { display: inline-block; margin-top: 10px; font-size: 12.5px; color: #7a7f92; text-decoration: none; }
+.admin-back:hover { color: #6C5CE7; }
+
+@media (max-width: 640px) {
+  .admin-row { flex-wrap: wrap; }
+  .admin-row-title { white-space: normal; }
+  .admin-row-ops { width: 100%; justify-content: flex-end; }
+  .admin-actions { width: 100%; }
+}
+
 /* ============ 减少动效偏好 ============ */
 @media (prefers-reduced-motion: reduce) {
   .sticker-char, .doodle, .ticker-track { animation: none; }

@@ -4,6 +4,7 @@ import PROFILE from './data/profile.js'
 import { tiltFromId, tapeFromId } from './lib/ids.js'
 import { decodeSlug } from './lib/route.js'
 import Markdown from './components/Markdown.jsx'
+import AdminApp from './admin/AdminApp.jsx'
 
 // ---------- 数据源：site.json（后台提交唯一写入的文件，见 spec §3） ----------
 const CATEGORIES = [{ id: 'all', label: '全部', emoji: '✨', color: '#6C5CE7' }, ...site.categories]
@@ -268,12 +269,17 @@ export default function App() {
     [active]
   )
 
+  // 后台：整页换成 AdminApp（令牌门禁 → 列表 ⇄ 编辑；返回前台的入口在 AdminApp 自己里面）。
+  // 必须放在所有 hook 之后 —— 早退写在 useState/useMemo 前面会让 hook 数量随路由变化，React 直接报错。
+  if (hash === '#/admin') return <div className="page"><AdminApp /></div>
+
   if (detailWork) {
     return (
       <div className="page">
         <WorkDetail work={detailWork} onBack={() => { window.location.hash = '' }} />
         <footer className="footer">
           © {new Date().getFullYear()} {PROFILE.name} · 想法不落灰，作品上墙来
+          <a className="admin-link" href="#/admin">✏️ 后台</a>
         </footer>
       </div>
     )
@@ -294,6 +300,7 @@ export default function App() {
       </main>
       <footer className="footer">
         © {new Date().getFullYear()} {PROFILE.name} · 想法不落灰，作品上墙来
+        <a className="admin-link" href="#/admin">✏️ 后台</a>
       </footer>
     </div>
   )
