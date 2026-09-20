@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { validateWork, validateImage, IMAGE_MAX } from '../lib/validate.js'
 import { newWorkId } from '../lib/ids.js'
 import { assetSrc } from '../lib/asset.js'
@@ -95,6 +95,13 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
   const [pending, setPending] = useState(false)   // 正在写 site.json
   const [uploading, setUploading] = useState('')  // 'body' | 'cover' | ''
   const [leaveOk, setLeaveOk] = useState(false)   // 已保存成功 / 已确认放弃：不用再拦着离开
+  // 刚上传的图片只存在于仓库+待构建，线上此刻还是 404（且浏览器会缓存这个 404）——
+  // 预览一律用内存里的 Blob 直显，构建时序与缓存都影响不到
+  const [localUrls, setLocalUrls] = useState({})  // 规范路径 '/images/works/x.png' → objectURL
+  const localUrlsRef = useRef(localUrls)
+  localUrlsRef.current = localUrls
+  useEffect(() => () => { Object.values(localUrlsRef.current).forEach((u) => URL.revokeObjectURL(u)) }, [])
+  const mdResolve = useCallback((s) => localUrls[s] ?? assetSrc(s), [localUrls])
 
   const busy = pending || !!uploading
   const isNew = !work
@@ -278,6 +285,8 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
       const bytes = new Uint8Array(await file.arrayBuffer())
       const name = nextImageName(ext)
       await gh.putImage(name, bytes, `content: 新增图片 ${name}`)
+      // 本地 Blob 预览：此刻线上还没有这张图，别去网络拿
+      setLocalUrls((m) => ({ ...m, [IMG_DIR + name]: URL.createObjectURL(new Blob([bytes], { type: file.type })) }))
       if (mode === 'cover') {
         setField('img', IMG_DIR + name)
         // 「表情与图片至少填一个」这条挂在 emoji 格子下，传好封面就该消掉
@@ -375,7 +384,7 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
   }
 
   const cover = () => {
-    if (form.img) return <img src={assetSrc(form.img)} alt="封面预览" />
+    if (form.img) return <img src={localUrls[form.img] ?? assetSrc(form.img)} alt="封面预览" />
     return <span className="admin-thumb-emoji">{form.emoji || '🗒️'}</span>
   }
 
@@ -566,7 +575,7 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
             ) : (
               <div className="admin-preview">
                 {form.bodyMd.trim()
-                  ? <Markdown source={form.bodyMd} />
+                  ? <Markdown source={form.bodyMd} resolveSrc={mdResolve} />
                   : <p className="admin-loading">正文还是空的，切回「✏️ 写正文」涂两段。</p>}
               </div>
             )}
