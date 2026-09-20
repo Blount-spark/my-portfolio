@@ -23,6 +23,14 @@ export function extFromType(t) {
 
 function err(code) { const e = new Error(code); e.code = code; return e }
 
+// PUT 提交成功响应里的新 blob sha：GitHub 对「内容未变」的提交返回 2xx + content: null
+// （不是 204），此时取不到 sha。宁可显式 bad_response，也不能静默返回 undefined 丢新 sha。
+function contentSha(r) {
+  const sha = r?.content?.sha
+  if (!sha) throw err('bad_response')
+  return sha
+}
+
 export function makeGh({ owner, repo, token, fetchImpl = fetch }) {
   const base = `${API}/repos/${owner}/${repo}`
   async function req(path, opts = {}) {
@@ -43,8 +51,10 @@ export function makeGh({ owner, repo, token, fetchImpl = fetch }) {
     if (res.status === 409) throw err('conflict')
     // 用 status 区间判定而非 res.ok：注入的 fake fetch（测试用）不带 Response 原型上的 ok
     if (res.status < 200 || res.status >= 300) throw err('bad_response')
-    // 204 No Content（内容未变的提交）与代理返回的非 JSON 都会在此抛裸 SyntaxError，
-    // 收敛为 bad_response 以保证「所有失败都带 .code」的对外契约
+    // 2xx 但响应体不可解析（204 空体、代理返回 HTML 错误页等）在此会抛裸 SyntaxError，
+    // 收敛为 bad_response 以保证「所有失败都带 .code」的对外契约。
+    // 注意：内容未变的 PUT 提交并不走这条分支 —— GitHub 返回 2xx + content: null，
+    // 由 contentSha 处理。
     try {
       return await res.json()
     } catch { throw err('bad_response') }
@@ -53,21 +63,27 @@ export function makeGh({ owner, repo, token, fetchImpl = fetch }) {
     async checkAccess() { await req(`/contents/${SITE_PATH}`); return true },
     async getSite() {
       const f = await req(`/contents/${SITE_PATH}`)
-      return { site: JSON.parse(b64ToStr(f.content)), sha: f.sha }
+      // 仓库里的 site.json 本身可能损坏（非法 base64 / JSON 残缺 / 无 content 字段）：
+      // 解码与解析都在此收敛为 bad_response，保证「所有失败都带 .code」的对外契约
+      let site
+      try {
+        site = JSON.parse(b64ToStr(f.content))
+      } catch { throw err('bad_response') }
+      return { site, sha: f.sha }
     },
     async putSite(site, sha) {
       const r = await req(`/contents/${SITE_PATH}`, {
         method: 'PUT',
         body: JSON.stringify({ message: 'content: 更新灵感实践', content: strToB64(JSON.stringify(site)), sha }),
       })
-      return { sha: r.content.sha }
+      return { sha: contentSha(r) }
     },
     async putImage(name, bytes, message) {
       const r = await req(`/contents/public/images/works/${name}`, {
         method: 'PUT',
         body: JSON.stringify({ message, content: bytesToB64(bytes) }),
       })
-      return { sha: r.content.sha }
+      return { sha: contentSha(r) }
     },
     async latestCommitDate() {
       const r = await req(`/commits?path=${encodeURIComponent(SITE_PATH)}&per_page=1`)

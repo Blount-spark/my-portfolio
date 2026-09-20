@@ -107,9 +107,36 @@ test('fetch 抛错→network，其他非 2xx→bad_response', async () => {
   await assert.rejects(boom.putSite({ works: [] }, 'S1'), (err) => err.code === 'bad_response')
 })
 
-test('2xx 但响应体不可解析（204 空提交）也归入 bad_response', async () => {
+// 注：GitHub 对「内容未变」的 PUT 提交并不返回 204，而是 2xx + content: null（见下方用例）。
+// 本条只守住 req 层这一半：空/非 JSON 响应体不得漏出裸 SyntaxError。
+test('2xx 但响应体不可解析（空体 / 非 JSON）→ req 层收敛为 bad_response', async () => {
   const gh = makeGh({ ...cfg, fetchImpl: async () => ({
     status: 204, json: async () => { throw new SyntaxError('Unexpected end of JSON input') },
   }) })
   await assert.rejects(gh.checkAccess(), (err) => err.code === 'bad_response')
+})
+
+// 方法体内取 sha 也要守住 .code 契约：Task 5 只做 setError('…：' + e.code)，
+// 若此处抛裸 TypeError 会显示 "读取失败：undefined"。
+test('2xx + content:null（内容未变的提交）→ putSite/putImage 抛 bad_response 而非裸 TypeError', async () => {
+  const noChange = makeGh({ ...cfg, fetchImpl: route(() => ({
+    status: 200, json: { content: null, commit: { sha: 'C1' } },
+  })) })
+  await assert.rejects(noChange.putSite({ works: [] }, 'S1'), (err) => err.code === 'bad_response')
+  await assert.rejects(noChange.putImage('w-1.png', new Uint8Array([1, 2]), 'content: 新增图片'),
+    (err) => err.code === 'bad_response')
+  // 响应体整体不是对象（代理返回 null 之类异常体）同样不能裸抛
+  const broken = makeGh({ ...cfg, fetchImpl: async () => ({ status: 200, json: async () => null }) })
+  await assert.rejects(broken.putSite({ works: [] }, 'S1'), (err) => err.code === 'bad_response')
+})
+
+test('getSite：仓库内容损坏（非法 base64 / JSON 残缺 / 缺 content）→ bad_response，不外泄裸异常', async () => {
+  for (const f of [
+    { sha: 'S1', content: 'not!!base64@@@' },        // 非 base64 字母表 → atob 抛 InvalidCharacterError
+    { sha: 'S1', content: strToB64('{ "works": [ ') }, // 合法 base64，但解码后是残缺 JSON
+    { sha: 'S1' },                                    // 无 content 字段（目录列表响应 / 元数据不全）
+  ]) {
+    const gh = makeGh({ ...cfg, fetchImpl: route(() => ({ status: 200, json: f })) })
+    await assert.rejects(gh.getSite(), (err) => err.code === 'bad_response')
+  }
 })
