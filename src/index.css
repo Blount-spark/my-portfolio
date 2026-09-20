@@ -636,11 +636,122 @@ body {
 .admin-back { display: inline-block; margin-top: 10px; font-size: 12.5px; color: #7a7f92; text-decoration: none; }
 .admin-back:hover { color: #6C5CE7; }
 
+/* ---------- 编辑器：表单 + markdown 工具条 + 图片上传 + 保存 ---------- */
+/* 一张纸从头填到尾：格子里的字段竖着排，成对的字段两列 */
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: rotate(0);
+}
+.admin-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.admin-cell > .admin-field { margin-bottom: 0; }
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+.admin-field .admin-btn { margin-top: 2px; }
+
+/* 校验红字：字段下方一行 + 边框变红，聚焦也还是它 */
+.admin-field-error { color: #D63031; font-size: 12px; font-weight: 700; }
+.admin-hint { font-size: 11.5px; color: #8b8fa0; line-height: 1.6; }
+.admin-input.invalid { border-color: #D63031; background: #fff7f6; }
+.admin-input.invalid:focus { box-shadow: 2px 2px 0 rgba(214, 48, 49, 0.28); }
+select.admin-input { cursor: pointer; }
+
+.admin-textarea { min-height: 340px; line-height: 1.8; resize: vertical; font-family: ui-monospace, monospace; font-size: 13px; }
+.admin-textarea-sm { min-height: 64px; line-height: 1.7; resize: vertical; }
+
+/* 页签 + 工具条 */
+.admin-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.admin-tabs-hint { font-size: 11.5px; color: #8b8fa0; }
+.admin-toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.admin-btn.sm { font-size: 12.5px; padding: 3px 12px; box-shadow: 2px 2px 0 rgba(45, 49, 66, 0.7); }
+.admin-btn.tab { border-radius: 10px 10px 4px 4px; color: #7a7f92; border-style: dashed; box-shadow: none; }
+.admin-btn.tab.active { background: #6C5CE7; color: #fff; border-style: solid; border-color: var(--ink); box-shadow: 2px 2px 0 rgba(45, 49, 66, 0.85); }
+.admin-btn.tool { border-radius: 8px; font-family: ui-monospace, monospace; }
+
+/* 预览：跟前台详情页同一个 .md，只是套个纸框 */
+.admin-preview {
+  border: 2px dashed rgba(45, 49, 66, 0.35);
+  border-radius: 12px;
+  background: #fff;
+  padding: 18px 20px;
+  min-height: 340px;
+}
+
+/* 渐变色：两个取色块，旁边小字就是真正要写回 site.json 的值 */
+.admin-colors { display: flex; gap: 14px; align-items: center; }
+.admin-color { display: flex; align-items: center; gap: 6px; }
+.admin-color-input {
+  width: 46px;
+  height: 32px;
+  padding: 2px;
+  background: #fff;
+  border: 2px solid rgba(45, 49, 66, 0.55);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.admin-color-note { font-family: ui-monospace, monospace; font-size: 11.5px; color: #7a7f92; }
+
+/* 封面：预览 + 只读路径回显 + 上传 */
+.admin-cover { display: flex; gap: 12px; align-items: flex-start; }
+.admin-cover-preview {
+  flex: 0 0 84px;
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: #EEE6D6;
+  transform: rotate(-1.2deg);
+}
+.admin-cover-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.admin-cover-ops { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.admin-input[readonly] { background: #F7F1E6; color: #6b6f80; font-family: ui-monospace, monospace; font-size: 12px; }
+.admin-file { display: none; }
+
+/* 顶部反馈条：绿的是「已经做好了什么」，红的是「哪儿不对」 */
+.admin-callout {
+  background: #E8FBF5;
+  border: 2px dashed #2EC4B6;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+.admin-callout.error {
+  background: #FFF3D6;
+  border-color: #D63031;
+  color: #A4261C;
+  font-weight: 700;
+}
+
+/* 上传/提交中的转圈 */
+.admin-busy { display: inline-flex; align-items: center; gap: 6px; }
+.admin-spin {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(45, 49, 66, 0.3);
+  border-top-color: var(--ink);
+  border-radius: 50%;
+  animation: admin-spin 0.7s linear infinite;
+}
+@keyframes admin-spin { to { transform: rotate(360deg) } }
+
+.admin-form-ops { border-top: 2px dashed rgba(45, 49, 66, 0.25); padding-top: 14px; }
+
 @media (max-width: 640px) {
   .admin-row { flex-wrap: wrap; }
   .admin-row-title { white-space: normal; }
   .admin-row-ops { width: 100%; justify-content: flex-end; }
   .admin-actions { width: 100%; }
+  .admin-grid { grid-template-columns: 1fr; }
+  .admin-cover { flex-wrap: wrap; }
+  .admin-textarea { min-height: 260px; }
+  .admin-preview { min-height: 260px; }
 }
 
 /* ============ 减少动效偏好 ============ */
@@ -648,6 +759,7 @@ body {
   .sticker-char, .doodle, .ticker-track { animation: none; }
   .reveal { opacity: 1; transform: none; }
   .card { transform: none; }
+  .admin-spin { animation: none; border-top-color: var(--ink); }
 }
 
 /* markdown 正文（详情页 & 后台预览共用 .md） */
