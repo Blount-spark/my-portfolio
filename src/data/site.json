@@ -73,23 +73,6 @@
       "emoji": "😄"
     },
     {
-      "id": "w-legacy-2",
-      "title": "城市漫步摄影集",
-      "category": "image",
-      "date": "2026-07",
-      "emoji": "🌆",
-      "gradient": [
-        "#89f7fe",
-        "#66a6ff"
-      ],
-      "desc": "连续 30 天在城市里随机走一条路，拍下「差点错过」的角落，共 47 张。",
-      "tags": [
-        "街拍",
-        "胶片感"
-      ],
-      "link": "#"
-    },
-    {
       "id": "w-legacy-4",
       "title": "毛线钩织小恐龙一家",
       "category": "craft",
