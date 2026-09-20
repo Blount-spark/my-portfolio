@@ -306,6 +306,7 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
     setErrors({})
     setNotice({ text: '', kind: '' })
     setPending(true)
+    let committed = false
     try {
       let cur = base
       if (!cur.site || !cur.sha) cur = await gh.getSite()
@@ -323,7 +324,7 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
       const r = await gh.putSite(newSite, cur.sha)
       setBase({ site: newSite, sha: r.sha })
       window.alert('已提交，站点约 1~2 分钟后自动更新')
-      await onSaved()
+      committed = true
     } catch (err) {
       if (err.code === 'conflict') {
         try {
@@ -339,6 +340,8 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
     } finally {
       setPending(false)
     }
+    // commit 已经成功了，父级回调抛错不该被当成提交失败（所以 onSaved 在 try 外面）
+    if (committed) await onSaved()
   }
 
   function cancel() {
@@ -525,12 +528,14 @@ export default function WorkEditor({ gh, site, sha, work, onCancel, onSaved }) {
                   <button type="button" className="admin-btn sm tool" onClick={() => pickImage('body')} disabled={busy}>
                     {uploading === 'body' ? <Spinner text="图片上传中…" /> : '🖼️ 插入图片'}
                   </button>
-                  <button type="button" className="admin-btn sm tool" onClick={() => wrap('**', '**', '加粗', false)}>B</button>
-                  <button type="button" className="admin-btn sm tool" onClick={() => prefixLines('- ')}>· 列表</button>
-                  <button type="button" className="admin-btn sm tool" onClick={() => prefixLines('> ')}>❝ 引用</button>
-                  <button type="button" className="admin-btn sm tool" onClick={() => wrap('```\n', '\n```', '代码', true)}>{'</>'} 代码块</button>
+                  <button type="button" className="admin-btn sm tool" onClick={() => wrap('**', '**', '加粗', false)} disabled={busy}>B</button>
+                  <button type="button" className="admin-btn sm tool" onClick={() => prefixLines('- ')} disabled={busy}>· 列表</button>
+                  <button type="button" className="admin-btn sm tool" onClick={() => prefixLines('> ')} disabled={busy}>❝ 引用</button>
+                  <button type="button" className="admin-btn sm tool" onClick={() => wrap('```\n', '\n```', '代码', true)} disabled={busy}>{'</>'} 代码块</button>
                 </div>
+                {/* busy 时锁输入：save() 已经拿 form 做了快照，这零点几秒再打的字会被静默丢掉 */}
                 <textarea ref={bodyRef} className="admin-input admin-textarea" value={form.bodyMd}
+                  readOnly={busy}
                   spellCheck={false} placeholder={'## 怎么做出来的\n\n想写什么写什么，图片点上面的「插入图片」。'}
                   onChange={(e) => setField('bodyMd', e.target.value)} />
               </>
