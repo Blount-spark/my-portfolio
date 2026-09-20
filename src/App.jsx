@@ -1,10 +1,17 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
-import { CATEGORIES, WORKS, PROFILE } from './data/works.js'
+import site from './data/site.json'
+import PROFILE from './data/profile.js'
+import { tiltFromId, tapeFromId } from './lib/ids.js'
+import Markdown from './components/Markdown.jsx'
+
+// ---------- 数据源：site.json（后台提交唯一写入的文件，见 spec §3） ----------
+const CATEGORIES = [{ id: 'all', label: '全部', emoji: '✨', color: '#6C5CE7' }, ...site.categories]
+const WORKS = site.works
 
 // ---------- 小工具 ----------
 const catById = (id) => CATEGORIES.find((c) => c.id === id) || CATEGORIES[0]
 
-// 极简 hash 路由：'' 表示作品墙，'#/work/3' 表示 3 号作品的详情页
+// 极简 hash 路由：'' 表示作品墙，'#/work/w-legacy-1' 表示该 slug 作品的详情页
 function useHashRoute() {
   const [hash, setHash] = useState(() => window.location.hash)
   useEffect(() => {
@@ -14,10 +21,6 @@ function useHashRoute() {
   }, [])
   return hash
 }
-
-// 根据作品 id 生成一个稳定的「歪斜角度」，拼贴感来自这里
-const tiltOf = (id) => (((id * 7) % 5) - 2) * 0.9 // -1.8° ~ 1.8°
-const tapeOf = (id) => (id % 2 === 0 ? 'tape-left' : 'tape-right')
 
 // ---------- 入场动画 hook ----------
 function useReveal() {
@@ -132,20 +135,20 @@ function FilterBar({ active, onChange }) {
 function WorkCard({ work, index }) {
   const ref = useReveal()
   const cat = catById(work.category)
-  const hasDetail = !!work.detail
+  const hasDetail = !!work.bodyMd
   const hasLink = work.link && work.link !== '#'
   return (
     <article
       ref={ref}
       className={`card reveal ${hasDetail ? 'card-clickable' : ''}`}
-      style={{ '--tilt': `${tiltOf(work.id)}deg`, '--i': index }}
+      style={{ '--tilt': `${tiltFromId(work.id)}deg`, '--i': index }}
       onClick={hasDetail ? (e) => {
         // 点卡片空白处进详情；点卡片里的链接（如外链）不拦截
         if (e.target.closest('a')) return
         window.location.hash = `#/work/${work.id}`
       } : undefined}
     >
-      <span className={`tape ${tapeOf(work.id)}`} />
+      <span className={`tape ${tapeFromId(work.id)}`} />
       <div
         className="card-cover"
         style={{ background: `linear-gradient(135deg, ${work.gradient[0]}, ${work.gradient[1]})` }}
@@ -193,7 +196,6 @@ function WorkDetail({ work, onBack }) {
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [work.id])
   const cat = catById(work.category)
   const hasLink = work.link && work.link !== '#'
-  const detail = work.detail || {}
   return (
     <main className="detail">
       <button className="back-btn" onClick={onBack}>← 回到作品墙</button>
@@ -216,24 +218,10 @@ function WorkDetail({ work, onBack }) {
           {work.tags.map((t) => <span key={t} className="tag">#{t}</span>)}
         </div>
 
-        {detail.story && detail.story.length > 0 && (
+        {work.bodyMd && (
           <section className="detail-story">
             <h3>📓 制作手记</h3>
-            {detail.story.map((p, i) => <p key={i}>{p}</p>)}
-          </section>
-        )}
-
-        {detail.gallery && detail.gallery.length > 0 && (
-          <section className="detail-gallery">
-            <h3>🖼️ 过程图</h3>
-            <div className="gallery-grid">
-              {detail.gallery.map((src, i) => (
-                <figure key={i} style={{ '--tilt': `${tiltOf(i + work.id)}deg` }}>
-                  <img src={src} alt={`${work.title} 图 ${i + 1}`} loading="lazy" />
-                  {detail.captions && detail.captions[i] && <figcaption>{detail.captions[i]}</figcaption>}
-                </figure>
-              ))}
-            </div>
+            <Markdown source={work.bodyMd} />
           </section>
         )}
 
@@ -271,8 +259,8 @@ function About() {
 export default function App() {
   const [active, setActive] = useState('all')
   const hash = useHashRoute()
-  const detailId = hash.startsWith('#/work/') ? Number(hash.slice('#/work/'.length)) : null
-  const detailWork = detailId != null ? WORKS.find((w) => w.id === detailId && w.detail) : null
+  const route = hash.startsWith('#/work/') ? decodeURIComponent(hash.slice('#/work/'.length)) : null
+  const detailWork = route ? WORKS.find((w) => w.id === route && w.bodyMd) : null
 
   const shown = useMemo(
     () => (active === 'all' ? WORKS : WORKS.filter((w) => w.category === active)),

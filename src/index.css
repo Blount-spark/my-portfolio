@@ -469,3 +469,16 @@ body {
   .reveal { opacity: 1; transform: none; }
   .card { transform: none; }
 }
+
+/* markdown 正文（详情页 & 后台预览共用 .md） */
+.md > *:first-child { margin-top: 0 }
+.md h2, .md h3 { font-family: inherit; margin: 1.4em 0 .5em }
+.md h2 { font-size: 1.25rem; transform: rotate(-.4deg) }
+.md p { margin: .8em 0; line-height: 1.9 }
+.md ul, .md ol { padding-left: 1.4em; margin: .8em 0 }
+.md blockquote { border-left: 4px solid var(--ink, #444); margin: 1em 0; padding: .2em 1em; background: rgba(255,255,255,.5); border-radius: 6px }
+.md pre { background: #2d2a32; color: #eee; padding: 1em; border-radius: 10px; overflow-x: auto }
+.md code { font-family: ui-monospace, monospace }
+.md img { max-width: 100%; border-radius: 10px; border: 6px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.12); transform: rotate(-.6deg); margin: .6em 0 }
+.md a { color: #0984E3 }
+.md table { border-collapse: collapse } .md td, .md th { border: 1px solid #cba; padding: .3em .6em }
